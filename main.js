@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 //  AXIOS GLOBALS
 axios.defaults.headers.common['X-Auth-Token'] =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp`XVCJ`9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
 
 // GET REQUEST
 // function getTodos() {
@@ -17,7 +17,9 @@ axios.defaults.headers.common['X-Auth-Token'] =
 // }
 function getTodos() {
     axios
-        .get('https://jsonplaceholder.typicode.com/todos?_limit=5')
+        .get('https://jsonplaceholder.typicode.com/todos?_limit=5', {
+            timeout: 5000,
+        })
         .then(res => showOutput(res))
         .catch(err => console.log(err))
 }
@@ -110,9 +112,10 @@ function transformResponse() {
 // ERROR HANDLING
 function errorHandling() {
     axios
-        .post('https://jsonplaceholder.typicode.com/todoss', {
-            title: 'New Todo',
-            completed: false,
+        .get('https://jsonplaceholder.typicode.com/todoss', {
+            validateStatus: function(status) {
+                return status < 500
+            },
         })
         .then(res => showOutput(res))
         .catch(err => {
@@ -120,17 +123,32 @@ function errorHandling() {
                 console.log(err.response.data)
                 console.log(err.response.status)
                 console.log(err.response.headers)
+
+                const errResp =
+                    err.response.status === 404
+                        ? alert('Error: Page not found')
+                        : console.log(errResp)
             }
-            const errResp =
-                err.response.status === 404
-                    ? alert('Error: Page not found')
-                    : console.log(errResp)
         })
 }
 
 // CANCEL TOKEN
 function cancelToken() {
-    console.log('Cancel Token')
+    const source = axios.CancelToken.source()
+
+    axios
+        .get('https://jsonplaceholder.typicode.com/todos', {
+            cancelToken: source.token,
+        })
+        .then(res => showOutput(res))
+        .catch(thrown => {
+            if (axios.isCancel(thrown)) {
+                console.log('request is Cancelled', thrown.message)
+            }
+        })
+
+    const canc = true ? source.cancel('Request was nullified') : ''
+    console.log(canc)
 }
 
 // INTERCEPTING REQUESTS & RESPONSES
@@ -149,6 +167,11 @@ axios.interceptors.request.use(
 )
 
 // AXIOS INSTANCES
+
+const axiosInstance = axios.create({
+    baseURL: 'https://jsonplaceholder.typicode.com',
+})
+// axiosInstance.get('/comments').then(res => showOutput(res))
 
 // Show output in browser
 function showOutput(res) {
